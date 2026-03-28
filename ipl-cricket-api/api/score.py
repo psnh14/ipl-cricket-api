@@ -16,7 +16,6 @@ def score():
         res = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        # Batting
         batters = []
         for row in soup.select("div.cb-col.cb-col-100.cb-ltst-wgt-hdr"):
             name_el = row.select_one("div.cb-col.cb-col-50 a")
@@ -28,7 +27,6 @@ def score():
                     "balls": runs_el[1].text.strip()
                 })
 
-        # Bowling
         bowlers = []
         for row in soup.select("div.cb-col.cb-col-100.cb-scrd-itms"):
             name_el = row.select_one("div.cb-col.cb-col-40 a")
@@ -45,6 +43,3 @@ def score():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-if __name__ == '__main__':
-    app.run()
