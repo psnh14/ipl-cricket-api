@@ -19,42 +19,21 @@ def score():
         soup = BeautifulSoup(res.text, "html.parser")
 
         if debug:
-            # Find all div classes in the page to identify structure
-            all_classes = set()
-            for div in soup.find_all('div', class_=True)[:200]:
-                for c in div.get('class', []):
-                    all_classes.add(c)
-            # Also grab a snippet around scorecard
-            scrd = soup.find('div', class_=lambda x: x and 'scrd' in x)
-            snippet = str(scrd)[:2000] if scrd else "no scrd div found"
-            return jsonify({
-                "classes_sample": sorted(list(all_classes))[:80],
-                "scrd_snippet": snippet
-            })
+            # Find any element containing a known player name
+            text_blocks = []
+            for tag in soup.find_all(['div','span','td'], string=True):
+                t = tag.get_text(strip=True)
+                if any(name in t for name in ['Kohli','Kishan','Head','Sharma','Patel','Klaasen','Pandya']):
+                    text_blocks.append({
+                        "tag": tag.name,
+                        "classes": tag.get('class', []),
+                        "parent_classes": tag.parent.get('class', []) if tag.parent else [],
+                        "text": t
+                    })
+            return jsonify({"player_elements": text_blocks[:20]})
 
         batters = []
-        for row in soup.select("div.cb-col.cb-col-100.cb-ltst-wgt-hdr"):
-            name_el = row.select_one("div.cb-col.cb-col-50 a")
-            runs_el = row.select("div.cb-col.cb-col-10.text-right")
-            if name_el and len(runs_el) >= 2:
-                batters.append({
-                    "name": name_el.text.strip(),
-                    "runs": runs_el[0].text.strip(),
-                    "balls": runs_el[1].text.strip()
-                })
-
         bowlers = []
-        for row in soup.select("div.cb-col.cb-col-100.cb-scrd-itms"):
-            name_el = row.select_one("div.cb-col.cb-col-40 a")
-            stats = row.select("div.cb-col.cb-col-10.text-right")
-            if name_el and len(stats) >= 4:
-                bowlers.append({
-                    "name": name_el.text.strip(),
-                    "overs": stats[0].text.strip(),
-                    "runs": stats[2].text.strip(),
-                    "wickets": stats[3].text.strip()
-                })
-
         return jsonify({"batters": batters, "bowlers": bowlers})
 
     except Exception as e:
