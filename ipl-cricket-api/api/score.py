@@ -7,14 +7,24 @@ app = Flask(__name__)
 @app.route('/score')
 def score():
     match_id = request.args.get('id')
+    debug = request.args.get('debug', '0') == '1'
+
     if not match_id:
         return jsonify({"error": "Missing id parameter"}), 400
 
     try:
         url = f"https://www.cricbuzz.com/live-cricket-scores/{match_id}"
-        headers = {"User-Agent": "Mozilla/5.0"}
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         res = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
+
+        if debug:
+            # Return first 5000 chars of HTML to inspect structure
+            return app.response_class(
+                response=res.text[:5000],
+                status=200,
+                mimetype='text/html'
+            )
 
         batters = []
         for row in soup.select("div.cb-col.cb-col-100.cb-ltst-wgt-hdr"):
