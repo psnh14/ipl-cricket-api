@@ -19,12 +19,18 @@ def score():
         soup = BeautifulSoup(res.text, "html.parser")
 
         if debug:
-            # Return first 5000 chars of HTML to inspect structure
-            return app.response_class(
-                response=res.text[:5000],
-                status=200,
-                mimetype='text/html'
-            )
+            # Find all div classes in the page to identify structure
+            all_classes = set()
+            for div in soup.find_all('div', class_=True)[:200]:
+                for c in div.get('class', []):
+                    all_classes.add(c)
+            # Also grab a snippet around scorecard
+            scrd = soup.find('div', class_=lambda x: x and 'scrd' in x)
+            snippet = str(scrd)[:2000] if scrd else "no scrd div found"
+            return jsonify({
+                "classes_sample": sorted(list(all_classes))[:80],
+                "scrd_snippet": snippet
+            })
 
         batters = []
         for row in soup.select("div.cb-col.cb-col-100.cb-ltst-wgt-hdr"):
